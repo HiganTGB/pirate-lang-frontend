@@ -51,12 +51,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import {useAuthStore} from "../stores/auth.ts";
 
 
 const email = ref('');
 const password = ref('');
 const router = useRouter();
-
+const authStore = useAuthStore();
 
 const handleLogin = async () => {
   try {

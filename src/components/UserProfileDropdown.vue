@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import type { UserProfile } from '@/stores/user';
+import type { UserProfile } from '../stores/user';
 
 
 interface Props {
