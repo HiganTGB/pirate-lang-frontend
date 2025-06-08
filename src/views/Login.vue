@@ -5,7 +5,7 @@
         <img src="../assets/logo.svg" alt="luyen-thi-logo" class="inline-block w-8 h-8 mr-2 -mt-1">
         Đăng nhập hệ thống
       </h1>
-      <form @submit.prevent="handleLogin" autocomplete="off" novalidate>
+      <form @submit.prevent="login" autocomplete="off" novalidate>
         <div class="mb-4">
           <label class="block text-gray-700 text-sm font-bold mb-2" for="user_name">
             Email
@@ -29,11 +29,19 @@
               v-model="password"
           >
         </div>
+
+        <div v-if="currentError" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong class="font-bold">Lỗi:</strong>
+          <span class="block sm:inline ml-2">{{ currentError.message }}</span>
+        </div>
+
         <button
             type="submit"
             class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            :disabled="isLoading"
         >
-          Đăng nhập
+          <span v-if="isLoading">Đang đăng nhập...</span>
+          <span v-else>Đăng nhập</span>
         </button>
         <div class="text-center mt-4 text-sm">
           <div class="text-gray-600">
@@ -49,51 +57,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import {useAuthStore} from "../stores/auth.ts";
+import { useLogin } from '../hooks/useLogin';
 
-
-const email = ref('');
-const password = ref('');
-const router = useRouter();
-const authStore = useAuthStore();
-
-const handleLogin = async () => {
-  try {
-    const response = await fetch('http://localhost:9000/v1/accounts/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Đăng nhập thất bại');
-    }
-    const data = await response.json();
-
-    const accessToken = data.access_token;
-    const refreshToken = data.refresh_token;
-
-    if (accessToken && refreshToken) {
-      authStore.setTokens(accessToken, refreshToken);
-      alert('Đăng nhập thành công!');
-      router.push('/');
-    } else {
-      throw new Error('API không trả về token hợp lệ.');
-    }
-
-  } catch (error) {
-    console.error('Đăng nhập thất bại:', error.message);
-    alert('Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản và mật khẩu.');
-  }
-};
+const { email, password, isLoading, login, currentError } = useLogin();
 </script>
 
 <style scoped>

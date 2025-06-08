@@ -25,9 +25,21 @@
             </router-link>
           </li>
           <li>
-            <router-link to="/products" class="block py-2 px-4 hover:bg-gray-700 transition-colors duration-200">
-              <i class="fas fa-box-open mr-2"></i> Question
-            </router-link>
+            <div class="block py-2 px-4 hover:bg-gray-700 transition-colors duration-200 cursor-pointer" @click="toggleSubMenu('library')">
+              <i class="fas fa-users mr-2"></i> Library <i :class="{'fas fa-chevron-down ml-2': !isSubMenuOpen('library'), 'fas fa-chevron-up ml-2': isSubMenuOpen('library')}"></i>
+            </div>
+            <ul v-if="isSubMenuOpen('library')" class="pl-8 bg-gray-700">
+              <li>
+                <router-link to="/users/manager" class="block py-2 px-4 hover:bg-gray-600 transition-colors duration-200">
+                  <i class="fas fa-user-tie mr-2"></i> Part
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/users/history" class="block py-2 px-4 hover:bg-gray-600 transition-colors duration-200">
+                  <i class="fas fa-history mr-2"></i> Questions
+                </router-link>
+              </li>
+            </ul>
           </li>
         </ul>
       </nav>
@@ -52,12 +64,13 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
 
+import { useRouter } from 'vue-router';
+import {useDropDown} from '../hooks/useDropDown.ts'
 
 const router = useRouter();
 
-
+const { toggleSubMenu, isSubMenuOpen } = useDropDown();
 const logout = () => {
 
   router.push('/login');

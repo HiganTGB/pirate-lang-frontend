@@ -13,7 +13,6 @@ export const useAuthStore = defineStore('auth', {
         refreshToken: null,
     }),
     getters: {
-
         isAuthenticated: (state): boolean => !!state.accessToken,
         getAccessToken: (state): string | null => state.accessToken,
         getRefreshToken: (state): string | null => state.refreshToken,
@@ -38,10 +37,6 @@ export const useAuthStore = defineStore('auth', {
             if (storedAccessToken && storedRefreshToken) {
                 this.accessToken = storedAccessToken;
                 this.refreshToken = storedRefreshToken;
-            }else
-            {
-                this.accessToken="a"
-                this.refreshToken="b"
             }
         },
     },
