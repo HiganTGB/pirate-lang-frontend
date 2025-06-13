@@ -60,7 +60,7 @@
 
       <div class="flex items-center space-x-4 flex-shrink-0">
         <template v-if="authStore.isAuthenticated">
-          <UserProfileDropdown :userProfile="userStore.getUserProfile" class="hidden md:block" />
+          <UserProfileDropdown class="hidden md:block" />
           <button @click="toggleMobileMenu" class="md:hidden text-gray-700 hover:text-blue-600 focus:outline-none">
             <i class="fas fa-bars text-xl"></i>
           </button>

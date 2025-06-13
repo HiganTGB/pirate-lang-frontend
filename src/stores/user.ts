@@ -15,7 +15,15 @@ export interface UserProfile {
 interface UserState {
     userProfile: UserProfile | null;
 }
+function convertMinioToLocalIfApplicable(url: string): string {
+    const minioRegex = /^(http:\/\/|https:\/\/)?minio(:[0-9]+)?/;
 
+    if (minioRegex.test(url)) {
+        return url.replace(minioRegex, '$1localhost$2');
+    } else {
+        return url;
+    }
+}
 export const useUserStore = defineStore('user', {
     state: (): UserState => ({
         userProfile: null,
@@ -69,7 +77,7 @@ export const useUserStore = defineStore('user', {
                     return;
                 }
 
-                const response = await fetch('http://pirate-backend:9100/v1/accounts/profile', {
+                const response = await fetch('http://localhost:9100/v1/accounts/profile', {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
@@ -83,17 +91,17 @@ export const useUserStore = defineStore('user', {
                 }
 
                 const data = await response.json();
+                console.log(data)
                 const Data: UserProfile = {
-                    userId: data.id,
-                    fullName: data.full_name,
-                    birthday: data.birthday,
-                    gender: data.gender,
-                    phoneNumber: data.phone_number,
-                    address: data.address,
-                    avatarUrl: data.avatar_url,
-                    bio: data.bio
+                    userId: data.data.id,
+                    fullName: data.data.full_name,
+                    birthday: data.data.birthday,
+                    gender: data.data.gender,
+                    phoneNumber: data.data.phone_number,
+                    address: data.data.address,
+                    avatarUrl: convertMinioToLocalIfApplicable(data.data.avatar_url),
+                    bio: data.data.bio
                 };
-
                 this.setUserProfile(Data);
                 console.log('User profile loaded into Pinia store:', this.userProfile);
             } catch (error: any) {
