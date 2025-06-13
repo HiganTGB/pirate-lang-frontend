@@ -1,5 +1,6 @@
-
 import { defineStore } from 'pinia';
+import { useAuthStore } from './auth';
+
 
 export interface UserProfile {
     userId: string;
@@ -10,11 +11,7 @@ export interface UserProfile {
     address: string;
     avatarUrl: string;
     bio: string;
-    createdAt: Date;
-    updatedAt: Date;
 }
-
-
 interface UserState {
     userProfile: UserProfile | null;
 }
@@ -37,45 +34,123 @@ export const useUserStore = defineStore('user', {
         },
     },
     actions: {
-        setUserProfile(profileData: Omit<UserProfile, 'birthday' | 'createdAt' | 'updatedAt'> & {
-            birthday?: string | null;
-            createdAt: string;
-            updatedAt: string;
-        }) {
+        setUserProfile(profileData: Partial<Omit<UserProfile, 'birthday'>> & { birthday?: string | Date | null }) {
             const formattedProfile: UserProfile = {
-                ...profileData,
-                birthday: profileData.birthday ? new Date(profileData.birthday) : null,
-                createdAt: new Date(profileData.createdAt),
-                updatedAt: new Date(profileData.updatedAt),
+                userId: profileData.userId || '',
+                fullName: profileData.fullName || '',
+                gender: profileData.gender || '',
+                birthday : null,
+                phoneNumber: profileData.phoneNumber || '',
+                address: profileData.address || '',
+                avatarUrl: profileData.avatarUrl || '',
+                bio: profileData.bio || '',
             };
+
+            if (profileData.birthday) {
+                if (profileData.birthday instanceof Date) {
+                    formattedProfile.birthday = profileData.birthday;
+                } else {
+                    const date = new Date(profileData.birthday);
+                    formattedProfile.birthday = isNaN(date.getTime()) ? null : date;
+                }
+            } else {
+                formattedProfile.birthday = null;
+            }
+
             this.userProfile = formattedProfile;
         },
 
         async fetchUserProfile() {
-            // TODO: fetch user
             try {
-                const sampleData = {
-                    userId: "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-                    fullName: "Trần Gia Bảo",
-                    birthday: "1990-01-15T00:00:00Z",
-                    gender: "Male",
-                    phoneNumber: "0987654321",
-                    address: "Ho Chi Minh City",
-                    avatarUrl: "https://i.pravatar.cc/150?img=68",
-                    bio: "Software Engineer",
-                    createdAt: "2023-01-01T10:00:00Z",
-                    updatedAt: new Date().toISOString(),
+                const authStore = useAuthStore();
+                const accessToken = authStore.getAccessToken;
+                if (!accessToken) {
+                    console.error('No access token available. Cannot fetch user profile.');
+                    return;
+                }
+
+                const response = await fetch('http://pirate-backend:9100/v1/accounts/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch user profile.');
+                }
+
+                const data = await response.json();
+                const Data: UserProfile = {
+                    userId: data.id,
+                    fullName: data.full_name,
+                    birthday: data.birthday,
+                    gender: data.gender,
+                    phoneNumber: data.phone_number,
+                    address: data.address,
+                    avatarUrl: data.avatar_url,
+                    bio: data.bio
                 };
 
-                this.setUserProfile(sampleData);
+                this.setUserProfile(Data);
                 console.log('User profile loaded into Pinia store:', this.userProfile);
+            } catch (error: any) {
+
+            }
+        },
+
+        async updateUserProfile(profileData: Partial<UserProfile>) {
+            try {
+                const authStore = useAuthStore();
+                const accessToken = authStore.getAccessToken;
+                if (!accessToken) {
+                    console.error('No access token available. Cannot update user profile.');
+                    return;
+                }
+
+                const dataToSend = {
+                    ...profileData,
+                    birthday: profileData.birthday instanceof Date ? profileData.birthday.toISOString().split('T')[0] : profileData.birthday,
+                };
+
+                const response = await fetch('http://localhost:9100/v1/accounts/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dataToSend),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update user profile.');
+                }
+
+                const updatedData = await response.json();
+                this.setUserProfile({
+                    userId: updatedData.id,
+                    fullName: updatedData.full_name,
+                    birthday: updatedData.birthday,
+                    gender: updatedData.gender,
+                    phoneNumber: updatedData.phone_number,
+                    address: updatedData.address,
+                    avatarUrl: updatedData.avatar_url,
+                    bio: updatedData.bio,
+                });
+                console.log('User profile updated successfully:', this.userProfile);
+                return true;
             } catch (error) {
-                console.error('Failed to fetch user profile:', error);
+                console.error('Failed to update user profile:', error);
+                return false;
             }
         },
 
         logout() {
             this.userProfile = null;
+             useAuthStore().clearTokens();
             console.log('User logged out.');
         },
     },

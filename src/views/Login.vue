@@ -17,6 +17,7 @@
               v-model="email"
               autofocus
           >
+          <p v-if="fieldErrors.email" class="text-red-500 text-xs italic mt-1">{{ fieldErrors.email }}</p>
         </div>
         <div class="mb-6">
           <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
@@ -28,11 +29,14 @@
               id="password"
               v-model="password"
           >
+          <p v-if="fieldErrors.password" class="text-red-500 text-xs italic mt-1">{{ fieldErrors.password }}</p>
         </div>
 
-        <div v-if="currentError" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+
+
+        <div v-if="generalError" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
           <strong class="font-bold">Lỗi:</strong>
-          <span class="block sm:inline ml-2">{{ currentError.message }}</span>
+          <span class="block sm:inline ml-2">{{ generalError }}</span>
         </div>
 
         <button
@@ -57,9 +61,62 @@
 </template>
 
 <script setup lang="ts">
-import { useLogin } from '../hooks/useLogin';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from "../stores/auth.ts";
+import { useFormErrors } from '../hooks/useFormErrors';
 
-const { email, password, isLoading, login, currentError } = useLogin();
+const email = ref('');
+const password = ref('');
+const isLoading = ref(false);
+
+
+const { generalError, fieldErrors, clearErrors, handleApiError } = useFormErrors();
+
+const router = useRouter();
+const authStore = useAuthStore();
+
+const login = async () => {
+  isLoading.value = true;
+  clearErrors();
+
+  try {
+    const response = await fetch('http://localhost:9100/v1/accounts/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      // Truyền toàn bộ object lỗi từ API vào hàm xử lý lỗi
+      handleApiError(errorData);
+      // Đảm bảo khối catch được kích hoạt để log lỗi nếu cần
+      throw new Error(errorData.message || 'Lỗi đăng nhập');
+    }
+
+    const data = await response.json();
+    console.log('Login successful:', data);
+    const accessToken = data.data.access_token;
+    const refreshToken = data.data.refresh_token;
+    authStore.setTokens(accessToken, refreshToken);
+    router.push('/');
+
+  } catch (error: any) {
+    console.error('Login error:', error);
+
+    if (!generalError.value && Object.keys(fieldErrors.value).length === 0) {
+      handleApiError(error);
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
 </script>
 
 <style scoped>

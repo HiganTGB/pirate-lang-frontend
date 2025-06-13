@@ -160,8 +160,8 @@
 
 <script lang="ts" setup>
 import { ref, watch } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-import { useUserStore } from '@/stores/user';
+import { useAuthStore } from '../stores/auth';
+import { useUserStore } from '../stores/user';
 import UserProfileDropdown from './UserProfileDropdown.vue';
 
 const authStore = useAuthStore();
