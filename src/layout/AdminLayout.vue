@@ -15,14 +15,21 @@
             </router-link>
           </li>
           <li>
-            <router-link to="/products" class="block py-2 px-4 hover:bg-gray-700 transition-colors duration-200">
-              <i class="fas fa-box-open mr-2"></i> Role
-            </router-link>
-          </li>
-          <li>
-            <router-link to="/products" class="block py-2 px-4 hover:bg-gray-700 transition-colors duration-200">
-              <i class="fas fa-box-open mr-2"></i> RBAC
-            </router-link>
+            <div class="block py-2 px-4 hover:bg-gray-700 transition-colors duration-200 cursor-pointer" @click="toggleSubMenu('rbac')">
+              <i class="fas fa-users mr-2"></i> RBAC <i :class="{'fas fa-chevron-down ml-2': !isSubMenuOpen('rbac'), 'fas fa-chevron-up ml-2': isSubMenuOpen('rbac')}"></i>
+            </div>
+            <ul v-if="isSubMenuOpen('rbac')" class="pl-8 bg-gray-700">
+              <li>
+                <router-link to="/rbac/roles" class="block py-2 px-4 hover:bg-gray-600 transition-colors duration-200">
+                  <i class="fas fa-user-tie mr-2"></i> Role
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/rbac/permissions" class="block py-2 px-4 hover:bg-gray-600 transition-colors duration-200">
+                  <i class="fas fa-history mr-2"></i> Permission
+                </router-link>
+              </li>
+            </ul>
           </li>
           <li>
             <div class="block py-2 px-4 hover:bg-gray-700 transition-colors duration-200 cursor-pointer" @click="toggleSubMenu('library')">
@@ -47,12 +54,15 @@
 
     <div class="flex flex-col flex-grow">
       <header class="bg-white shadow-md p-4 flex justify-between items-center z-10">
-        <h1 class="text-2xl font-semibold text-gray-800">Dashboard</h1>
+        <h1 class="text-2xl font-semibold text-gray-800"></h1>
+
         <div class="flex items-center space-x-4">
-          <span class="text-gray-700">Welcome, Admin!</span>
-          <button @click="logout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors duration-200">
-            Logout
-          </button>
+          <template v-if="authStore.isAuthenticated">
+            <div class="mb-4">
+              <AdminProfileDropdown :userProfile="userStore.getUserProfile" />
+            </div>
+            <hr class="border-gray-200 mb-4" />
+          </template>
         </div>
       </header>
 
@@ -65,14 +75,24 @@
 
 <script setup lang="ts">
 
-import { useRouter } from 'vue-router';
-import {useDropDown} from '../hooks/useDropDown.ts'
 
-const router = useRouter();
+import {useDropDown} from '../hooks/useDropDown.ts'
+import { useAuthStore } from '../stores/auth.ts';
+import { useUserStore } from '../stores/user.ts';
+
+import {watch} from "vue";
+import AdminProfileDropdown from "../components/admin/AdminProfileDropdown.vue";
+
+
+const authStore = useAuthStore();
+const userStore = useUserStore();
+
+
 
 const { toggleSubMenu, isSubMenuOpen } = useDropDown();
-const logout = () => {
-
-  router.push('/login');
-};
+watch(() => authStore.isAuthenticated, (newVal) => {
+  if (newVal && !userStore.getUserProfile) {
+    userStore.fetchUserProfile();
+  }
+}, { immediate: true });
 </script>

@@ -1,56 +1,52 @@
 import { defineStore } from 'pinia';
 import { useAuthStore } from './auth';
+import {get, put, API_BASE_URL, postFormData,} from '../utils/api';
+import type{ UserProfile,UpdateUserAvatarResponse } from '../type/dto'
 
-
-export interface UserProfile {
-    userId: string;
-    fullName: string;
-    birthday: Date | null;
-    gender: string;
-    phoneNumber: string;
-    address: string;
-    avatarUrl: string;
-    bio: string;
-}
+// Định nghĩa interface cho State của User Store
 interface UserState {
     userProfile: UserProfile | null;
 }
+// For Localhost
 function convertMinioToLocalIfApplicable(url: string): string {
     const minioRegex = /^(http:\/\/|https:\/\/)?minio(:[0-9]+)?/;
-
     if (minioRegex.test(url)) {
         return url.replace(minioRegex, '$1localhost$2');
-    } else {
-        return url;
     }
+    return url;
 }
+
 export const useUserStore = defineStore('user', {
     state: (): UserState => ({
-        userProfile: null,
+        userProfile: null
     }),
+
     getters: {
         getUserProfile(state): UserProfile | null {
             return state.userProfile;
         },
         getInitials(state): string {
-            if (!state.userProfile || !state.userProfile.fullName) return '';
-            const parts = state.userProfile.fullName.split(' ');
+            if (!state.userProfile || !state.userProfile.full_name) return '';
+            const parts = state.userProfile.full_name.split(' ');
             if (parts.length > 1) {
                 return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
             }
-            return state.userProfile.fullName[0].toUpperCase();
+            return state.userProfile.full_name[0].toUpperCase();
         },
     },
+
     actions: {
         setUserProfile(profileData: Partial<Omit<UserProfile, 'birthday'>> & { birthday?: string | Date | null }) {
             const formattedProfile: UserProfile = {
-                userId: profileData.userId || '',
-                fullName: profileData.fullName || '',
+                id: profileData.id || '',
+                email :profileData.email || '',
+                user_name:profileData.user_name ||'',
+                full_name: profileData.full_name || '',
                 gender: profileData.gender || '',
-                birthday : null,
-                phoneNumber: profileData.phoneNumber || '',
+                birthday: null,
+                phone_number: profileData.phone_number || '',
                 address: profileData.address || '',
-                avatarUrl: profileData.avatarUrl || '',
+                avatar_url: profileData.avatar_url || '',
                 bio: profileData.bio || '',
             };
 
@@ -64,101 +60,81 @@ export const useUserStore = defineStore('user', {
             } else {
                 formattedProfile.birthday = null;
             }
-
             this.userProfile = formattedProfile;
         },
-
         async fetchUserProfile() {
             try {
-                const authStore = useAuthStore();
-                const accessToken = authStore.getAccessToken;
-                if (!accessToken) {
-                    console.error('No access token available. Cannot fetch user profile.');
-                    return;
+                const { data, error } = await get<UserProfile>(`${API_BASE_URL}/accounts/profile`);
+                if (error.value) {
+                    throw error;
                 }
 
-                const response = await fetch('http://localhost:9100/v1/accounts/profile', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to fetch user profile.');
+                if (data.value) {
+                    const profile = data.value as UserProfile;
+                    profile.avatar_url=convertMinioToLocalIfApplicable(profile.avatar_url)
+                    this.setUserProfile(profile);
+                    console.log('User profile loaded into Pinia store:', this.userProfile);
                 }
-
-                const data = await response.json();
-                console.log(data)
-                const Data: UserProfile = {
-                    userId: data.data.id,
-                    fullName: data.data.full_name,
-                    birthday: data.data.birthday,
-                    gender: data.data.gender,
-                    phoneNumber: data.data.phone_number,
-                    address: data.data.address,
-                    avatarUrl: convertMinioToLocalIfApplicable(data.data.avatar_url),
-                    bio: data.data.bio
-                };
-                this.setUserProfile(Data);
-                console.log('User profile loaded into Pinia store:', this.userProfile);
-            } catch (error: any) {
-
+            } catch (err: any) {
+                console.error('Failed to fetch user profile:', err);
+                throw err;
             }
         },
-
-        async updateUserProfile(profileData: Partial<UserProfile>) {
+        async updateUserProfile(profileData: Partial<UserProfile>): Promise<boolean> {
             try {
-                const authStore = useAuthStore();
-                const accessToken = authStore.getAccessToken;
-                if (!accessToken) {
-                    console.error('No access token available. Cannot update user profile.');
-                    return;
-                }
-
                 const dataToSend = {
                     ...profileData,
-                    birthday: profileData.birthday instanceof Date ? profileData.birthday.toISOString().split('T')[0] : profileData.birthday,
+                    birthday: profileData.birthday instanceof Date ? profileData.birthday.toISOString() : profileData.birthday,
                 };
+                console.log('Sending update profile data:', dataToSend);
 
-                const response = await fetch('http://localhost:9100/v1/accounts/profile', {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(dataToSend),
-                });
+                const { data, error } = await put<UserProfile>(`${API_BASE_URL}/accounts/profile`, dataToSend);
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to update user profile.');
+                if (error.value) {
+                    throw error.value;
                 }
-
-                const updatedData = await response.json();
-                this.setUserProfile({
-                    userId: updatedData.id,
-                    fullName: updatedData.full_name,
-                    birthday: updatedData.birthday,
-                    gender: updatedData.gender,
-                    phoneNumber: updatedData.phone_number,
-                    address: updatedData.address,
-                    avatarUrl: updatedData.avatar_url,
-                    bio: updatedData.bio,
-                });
+                if (data.value) {
+                    await this.fetchUserProfile();
+                }
                 console.log('User profile updated successfully:', this.userProfile);
                 return true;
-            } catch (error) {
-                console.error('Failed to update user profile:', error);
-                return false;
+            } catch (err: any) {
+                console.error('Failed to update user profile:', err);
+                throw err;
             }
         },
+        async updateAvatar(file: File): Promise<string | null> {
+            try {
+                console.log(file);
+                const formData = new FormData();
+                formData.append('avatar', file);
 
+                const { data, error } = await postFormData<UpdateUserAvatarResponse>(`${API_BASE_URL}/accounts/profile/avatar`,formData);
+                if (error.value) {
+                    throw error.value;
+                }
+                if (data.value) {
+                    await this.fetchUserProfile();
+                }
+
+                const responseAvatar = data.value as UpdateUserAvatarResponse;
+                const newAvatarUrl = convertMinioToLocalIfApplicable(responseAvatar.object_url);
+                if (this.userProfile) {
+                    this.userProfile.avatar_url = newAvatarUrl;
+                } else {
+                    await this.fetchUserProfile();
+                }
+
+                console.log('Avatar uploaded successfully:', newAvatarUrl);
+                return newAvatarUrl;
+            } catch (err: any) {
+                console.error('Failed to upload avatar:', err);
+                throw err;
+            }
+        },
         logout() {
             this.userProfile = null;
-             useAuthStore().clearTokens();
+            useAuthStore().clearTokens();
             console.log('User logged out.');
         },
     },

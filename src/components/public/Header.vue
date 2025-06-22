@@ -2,8 +2,8 @@
   <header class="bg-white shadow-md py-4">
     <div class="container mx-auto flex items-center justify-between px-4">
       <div class="flex-shrink-0 flex items-center space-x-2">
-        <a href="/" class="block flex items-center space-x-2">
-          <img src="../assets/logo.svg" alt="Logo" class="h-10">
+        <a href="/src/public" class="block flex items-center space-x-2">
+          <img src="../../assets/logo.svg" alt="Logo" class="h-10">
           <span class="text-xl font-bold text-gray-800">Pirate Language</span>
         </a>
       </div>
@@ -160,8 +160,8 @@
 
 <script lang="ts" setup>
 import { ref, watch } from 'vue';
-import { useAuthStore } from '../stores/auth';
-import { useUserStore } from '../stores/user';
+import { useAuthStore } from '../../stores/auth.ts';
+import { useUserStore } from '../../stores/user.ts';
 import UserProfileDropdown from './UserProfileDropdown.vue';
 
 const authStore = useAuthStore();

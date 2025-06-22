@@ -63,13 +63,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from "../stores/auth.ts";
+import { useAuthStore } from "../stores/auth";
 import { useFormErrors } from '../hooks/useFormErrors';
 
 const email = ref('');
 const password = ref('');
 const isLoading = ref(false);
-
 
 const { generalError, fieldErrors, clearErrors, handleApiError } = useFormErrors();
 
@@ -79,40 +78,15 @@ const authStore = useAuthStore();
 const login = async () => {
   isLoading.value = true;
   clearErrors();
-
+  generalError.value = '';
   try {
-    const response = await fetch('http://localhost:9100/v1/accounts/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value,
-      }),
+    await authStore.login({
+      email: email.value,
+      password: password.value,
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      // Truyền toàn bộ object lỗi từ API vào hàm xử lý lỗi
-      handleApiError(errorData);
-      // Đảm bảo khối catch được kích hoạt để log lỗi nếu cần
-      throw new Error(errorData.message || 'Lỗi đăng nhập');
-    }
-
-    const data = await response.json();
-    console.log('Login successful:', data);
-    const accessToken = data.data.access_token;
-    const refreshToken = data.data.refresh_token;
-    authStore.setTokens(accessToken, refreshToken);
     router.push('/');
-
-  } catch (error: any) {
-    console.error('Login error:', error);
-
-    if (!generalError.value && Object.keys(fieldErrors.value).length === 0) {
-      handleApiError(error);
-    }
+  } catch (err: any) {
+    handleApiError(err);
   } finally {
     isLoading.value = false;
   }

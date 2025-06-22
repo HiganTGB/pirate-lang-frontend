@@ -1,65 +1,60 @@
-import {type Ref, ref} from 'vue';
-
-interface ApiErrorDetail {
-    field: string;
-    message: string;
-}
-
-interface ApiResponseError {
-    status?: string;
-    code: number;
-    message: string;
-    details?: ApiErrorDetail[];
-}
+import { type Ref, ref } from 'vue';
+import type { ResponseError } from '../type/response';
 
 export function useFormErrors() {
-    // Lỗi tổng quát, ví dụ: lỗi mạng, lỗi server không rõ, hoặc lỗi message chung từ API
+    //init error type
     const generalError: Ref<string | null> = ref(null);
-
-    // Lỗi validation cho từng trường input (ví dụ: email, password)
     const fieldErrors: Ref<{ [key: string]: string }> = ref({});
+    //Check error
+    const hasErrors: Ref<boolean> = ref(false);
 
-    // Xóa tất cả các lỗi hiện có
+    // Clean errors
     const clearErrors = () => {
         generalError.value = null;
         fieldErrors.value = {};
+        hasErrors.value = false;
     };
-
-    // Xử lý và phân loại lỗi từ phản hồi API
     const handleApiError = (error: any) => {
-        clearErrors(); // Xóa lỗi cũ trước khi xử lý lỗi mới
+        clearErrors();
 
-        // Kiểm tra nếu error là một instance của Error
-        if (error instanceof Error) {
-            generalError.value = error.message || 'Đã xảy ra lỗi không xác định.';
+        hasErrors.value = true;
+
+        // Check errors is Error
+        if (error instanceof TypeError) {
+            generalError.value = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng của bạn hoặc thử lại sau.';
+            return;
+        }
+        if (error && typeof error === 'object' && 'code' in error && error.code === 0) {
+            generalError.value = 'Lỗi kết nối mạng hoặc không nhận được phản hồi từ máy chủ. Vui lòng thử lại.';
             return;
         }
 
-        const apiError: ApiResponseError = error;
 
-        // Lỗi từ Validation (có trường 'details')
+        const apiError: ResponseError = error;
+
+        // Check Details
         if (apiError.details && Array.isArray(apiError.details) && apiError.details.length > 0) {
             apiError.details.forEach(detail => {
                 if (detail.field && detail.message) {
                     fieldErrors.value[detail.field] = detail.message;
                 }
             });
-            // Đặt thông báo lỗi chung cho validation
             generalError.value = apiError.message || 'Vui lòng kiểm tra lại thông tin nhập.';
         }
-        // Lỗi chỉ có message
+        // Check Message
         else if (apiError.message) {
             generalError.value = apiError.message;
         }
-        // Lỗi hệ thống hoặc lỗi không xác định khác
+        // Return if unknown
         else {
-            generalError.value = 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.';
+            generalError.value = 'Đã xảy ra lỗi hệ thống không xác định. Vui lòng thử lại sau.';
         }
     };
 
     return {
         generalError,
         fieldErrors,
+        hasErrors,
         clearErrors,
         handleApiError,
     };
