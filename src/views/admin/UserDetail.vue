@@ -87,12 +87,9 @@ const selectedUserDetail = ref<UserProfileDetail | null>(null);
 const userDetailLoading = ref(false);
 const userDetailError = ref<Error | null>(null);
 
-/**
- * Hàm tải chi tiết người dùng từ API.
- * Lấy ID từ route params.
- */
+
 const fetchUserDetail = async () => {
-  const userId = route.params.id as string; // Lấy ID từ tham số URL
+  const userId = route.params.id as string;
   if (!userId) {
     userDetailError.value = new Error('Không tìm thấy ID người dùng trong URL.');
     showError('Lỗi: Không tìm thấy ID người dùng.');
@@ -129,11 +126,7 @@ const fetchUserDetail = async () => {
   }
 };
 
-/**
- * Hàm định dạng ngày giờ chuẩn ISO string thành chuỗi dễ đọc.
- * @param dateString Chuỗi ngày giờ (ISO 8601).
- * @returns Chuỗi ngày giờ đã định dạng.
- */
+
 const formatDate = (dateString: string | null): string => {
   if (!dateString) return 'Chưa cập nhật';
   try {
@@ -149,19 +142,17 @@ const formatDate = (dateString: string | null): string => {
   }
 };
 
-/**
- * Hàm quay lại trang trước đó.
- */
+
 const goBack = () => {
-  router.back(); // Quay lại trang trước trong lịch sử trình duyệt
+  router.back();
 };
 
-// Khi component được mount, tải chi tiết người dùng
+
 onMounted(() => {
   fetchUserDetail();
 });
 
-// Theo dõi sự thay đổi của ID trong URL (ví dụ: nếu bạn muốn chuyển đổi giữa các user detail mà không reload component)
+
 watch(() => route.params.id, (newId, oldId) => {
   if (newId && newId !== oldId) {
     fetchUserDetail();
@@ -170,5 +161,5 @@ watch(() => route.params.id, (newId, oldId) => {
 </script>
 
 <style scoped>
-/* Có thể thêm các styles tùy chỉnh cho trang chi tiết */
+
 </style>

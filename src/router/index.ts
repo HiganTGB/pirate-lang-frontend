@@ -13,6 +13,8 @@ import ProfileTabs from "../views/public/ProfileTabs.vue";
 import HistoryContent from "../views/public/HistoryContent.vue";
 import ChangePassword from "../views/ChangePassword.vue";
 import UserDetail from "../views/admin/UserDetail.vue";
+import RoleList from "../views/admin/RoleList.vue";
+import RoleDetail from "../views/admin/RoleDetail.vue";
 import EmptyLayout from "../layout/EmptyLayout.vue";
 
 
@@ -88,6 +90,26 @@ const routes = [
                 component: UserDetail,
                 props: true,
             },
+            {
+                path : '/rbac',
+                component: EmptyLayout,
+                children:[
+
+                    {
+                        path: 'roles',
+                        name: 'RoleList',
+                        component: RoleList,
+                    },
+                    {
+                        path: 'roles/:id',
+                        name: 'RoleDetail',
+                        component: RoleDetail,
+                        props: true,
+                    },
+
+                ]
+            },
+            {
                 path : 'profile',
                 name :'My profile',
                 component: Profile,

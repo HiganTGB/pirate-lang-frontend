@@ -29,3 +29,27 @@ export interface UpdateUserAvatarResponse {
     original_filename: string;
     object_url: string;
 }
+export interface ExamPartResponse {
+    part_title: string;
+    part_order: number;
+    description: string;
+    is_practice_component: boolean;
+    plan_type: string;
+    created_at: string;
+    updated_at: string;
+    toeic_part_number: number;
+}
+export interface Exam {
+    exam_id: string;
+    exam_title: string;
+    description: string;
+    duration_minutes: number;
+    exam_type: string;
+    max_listening_score: number;
+    max_reading_score: number;
+    max_speaking_score: number;
+    max_writing_score: number;
+    total_score: number;
+    created_at: string;
+    updated_at: string;
+}

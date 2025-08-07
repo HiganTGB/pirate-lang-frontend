@@ -81,7 +81,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, type Ref } from 'vue';
-import { useRouter } from 'vue-router'; // Import useRouter
+import { useRouter } from 'vue-router';
 import { usePagination } from '../../hooks/usePagination.ts';
 import PaginationControls from '../../components/PaginationControls.vue';
 
@@ -94,7 +94,7 @@ import type {PaginationData} from "../../type/response.ts";
 import type {User} from "../../type/dto.ts";
 const { showError } = useToast();
 
-const router = useRouter(); // Khởi tạo router
+const router = useRouter();
 
 const USERS_API_PATH = '/admin/users';
 
@@ -112,9 +112,7 @@ const {
 const users: Ref<User[]> = ref([]);
 const loading = ref(true);
 
-/**
- * Hàm tải dữ liệu người dùng từ API.
- */
+
 const fetchUsers = async () => {
   try {
     const url = `${API_BASE}${USERS_API_PATH}?pageNumber=${currentPage.value}&pageSize=${pageSize.value}`;
@@ -145,19 +143,11 @@ const fetchUsers = async () => {
   }
 };
 
-/**
- * Hàm điều hướng đến trang chi tiết người dùng.
- * @param userId ID của người dùng cần xem chi tiết.
- */
 const viewUserDetail = (userId: string) => {
   router.push({ name: 'UserDetail', params: { id: userId } });
 };
 
-/**
- * Hàm định dạng ngày giờ chuẩn ISO string thành chuỗi dễ đọc.
- * @param dateString Chuỗi ngày giờ (ISO 8601).
- * @returns Chuỗi ngày giờ đã định dạng.
- */
+
 const formatDate = (dateString: string | null): string => {
   if (!dateString) return '';
   try {
@@ -187,5 +177,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Không cần xóa gì nhiều nếu bạn đã dùng Tailwind CSS */
+
 </style>

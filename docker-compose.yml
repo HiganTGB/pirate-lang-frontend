@@ -1,0 +1,21 @@
+
+services:
+  pirate-frontend:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    container_name: pirate_frontend
+    env_file: ".env"
+    volumes:
+      - '.:/app'
+      - /app/node_modules/
+    networks:
+      - pirate_network
+    expose:
+      - 5174
+    ports:
+      - "5174:5174"
+networks:
+  pirate_network:
+    external: true
+    driver: bridge
